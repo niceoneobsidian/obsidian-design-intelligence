@@ -48,28 +48,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
       - name: Inspect governed surfaces
         shell: bash
         run: |
           set -euo pipefail
-          printf '%s\n' '--- source ---'; find src -maxdepth 2 -type f | sort || true
-          printf '%s\n' '--- schemas ---'; find schemas -maxdepth 2 -type f | sort || true
-          printf '%s\n' '--- knowledge ---'; find knowledge -maxdepth 2 -type f | sort || true
-          printf '%s\n' '--- skills ---'; find skills -maxdepth 2 -type f | sort || true
-          printf '%s\n' '--- workflows ---'; find workflows -maxdepth 2 -type f | sort || true
+          printf '%s\n' '--- source ---'; find src -maxdepth 2 -type f | sort
+          printf '%s\n' '--- schemas ---'; find schemas -maxdepth 2 -type f | sort
+          printf '%s\n' '--- knowledge ---'; find knowledge -maxdepth 2 -type f | sort
+          printf '%s\n' '--- skills ---'; find skills -maxdepth 2 -type f | sort
+          printf '%s\n' '--- workflows ---'; find workflows -maxdepth 2 -type f | sort
       - name: Verify project metadata
-        run: python - <<'PY'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
           import tomllib
           from pathlib import Path
-          data = tomllib.loads(Path("pyproject.toml").read_text())
+
+          data = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
           project = data["project"]
           assert project["name"] == "obsidian-design-intelligence"
           assert project["requires-python"] == ">=3.11"
-          assert "pytest" in project["optional-dependencies"]["dev"]
-          assert "ruff" in project["optional-dependencies"]["dev"]
-          assert "mypy" in project["optional-dependencies"]["dev"]
+          dev = project["optional-dependencies"]["dev"]
+          for dependency in ("pytest", "ruff", "mypy"):
+              assert any(item.startswith(dependency) for item in dev), dependency
           print("Project metadata and development controls verified.")
-        shell: bash
+          PY
 
   plan:
     name: 03 · Plan & Architecture Gate
@@ -138,17 +145,18 @@ jobs:
           test -n "$(find dist -maxdepth 1 -type f -print -quit)"
           python - <<'PY'
           from pathlib import Path
-          import zipfile
           import tarfile
+          import zipfile
+
           files = list(Path("dist").iterdir())
           assert files, "dist is empty"
-          for f in files:
-              if f.suffix == ".whl":
-                  with zipfile.ZipFile(f) as z:
-                      assert any(p.startswith("odi/") for p in z.namelist())
-              elif f.suffixes[-2:] == [".tar", ".gz"]:
-                  with tarfile.open(f, "r:gz") as t:
-                      assert any(p.name == "pyproject.toml" for p in t.getmembers())
+          for artifact in files:
+              if artifact.suffix == ".whl":
+                  with zipfile.ZipFile(artifact) as archive:
+                      assert any(path.startswith("odi/") for path in archive.namelist())
+              elif artifact.suffixes[-2:] == [".tar", ".gz"]:
+                  with tarfile.open(artifact, "r:gz") as archive:
+                      assert any(member.name.endswith("pyproject.toml") for member in archive.getmembers())
           print("Distribution artifacts validated.")
           PY
       - name: Upload release candidate
