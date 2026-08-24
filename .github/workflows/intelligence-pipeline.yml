@@ -1,0 +1,205 @@
+name: Design Intelligence Pipeline
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: design-intelligence-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  intake:
+    name: 01 · Intake & Contract
+    runs-on: ubuntu-latest
+    outputs:
+      has_python: ${{ steps.contract.outputs.has_python }}
+      has_tests: ${{ steps.contract.outputs.has_tests }}
+      has_schemas: ${{ steps.contract.outputs.has_schemas }}
+      has_knowledge: ${{ steps.contract.outputs.has_knowledge }}
+      has_skills: ${{ steps.contract.outputs.has_skills }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          for path in pyproject.toml src tests schemas knowledge skills workflows; do
+            test -e "$path" || { echo "Missing required contract path: $path"; exit 1; }
+          done
+          echo "has_python=true" >> "$GITHUB_OUTPUT"
+          echo "has_tests=true" >> "$GITHUB_OUTPUT"
+          echo "has_schemas=true" >> "$GITHUB_OUTPUT"
+          echo "has_knowledge=true" >> "$GITHUB_OUTPUT"
+          echo "has_skills=true" >> "$GITHUB_OUTPUT"
+          echo "Contract accepted: repository contains the required intelligence-system surfaces."
+
+  context:
+    name: 02 · Context & Evidence
+    needs: intake
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect governed surfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' '--- source ---'; find src -maxdepth 2 -type f | sort || true
+          printf '%s\n' '--- schemas ---'; find schemas -maxdepth 2 -type f | sort || true
+          printf '%s\n' '--- knowledge ---'; find knowledge -maxdepth 2 -type f | sort || true
+          printf '%s\n' '--- skills ---'; find skills -maxdepth 2 -type f | sort || true
+          printf '%s\n' '--- workflows ---'; find workflows -maxdepth 2 -type f | sort || true
+      - name: Verify project metadata
+        run: python - <<'PY'
+          import tomllib
+          from pathlib import Path
+          data = tomllib.loads(Path("pyproject.toml").read_text())
+          project = data["project"]
+          assert project["name"] == "obsidian-design-intelligence"
+          assert project["requires-python"] == ">=3.11"
+          assert "pytest" in project["optional-dependencies"]["dev"]
+          assert "ruff" in project["optional-dependencies"]["dev"]
+          assert "mypy" in project["optional-dependencies"]["dev"]
+          print("Project metadata and development controls verified.")
+        shell: bash
+
+  plan:
+    name: 03 · Plan & Architecture Gate
+    needs: context
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate workflow architecture
+        shell: bash
+        run: |
+          set -euo pipefail
+          workflow='.github/workflows/intelligence-pipeline.yml'
+          for stage in '01 · Intake & Contract' '02 · Context & Evidence' '03 · Plan & Architecture Gate' '04 · Execute & Test' '05 · Validate' '06 · Recover & Report' '07 · Release Candidate' '08 · Observe & Learn'; do
+            grep -Fq "$stage" "$workflow" || { echo "Missing stage: $stage"; exit 1; }
+          done
+          grep -Fq 'needs: intake' "$workflow"
+          grep -Fq 'needs: context' "$workflow"
+          grep -Fq 'needs: plan' "$workflow"
+          echo "Pipeline DAG and required control stages verified."
+
+  execute:
+    name: 04 · Execute & Test
+    needs: plan
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install package and development tools
+        run: python -m pip install --upgrade pip && pip install -e '.[dev]'
+      - name: Lint
+        run: ruff check .
+      - name: Type check
+        run: mypy src
+      - name: Test
+        run: pytest -q --cov=odi --cov-report=term-missing --cov-report=xml
+      - name: Upload coverage evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-python-${{ matrix.python-version }}
+          path: coverage.xml
+
+  validate:
+    name: 05 · Validate
+    needs: execute
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install build tooling
+        run: python -m pip install --upgrade pip build
+      - name: Build distribution
+        run: python -m build
+      - name: Validate build artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$(find dist -maxdepth 1 -type f -print -quit)"
+          python - <<'PY'
+          from pathlib import Path
+          import zipfile
+          import tarfile
+          files = list(Path("dist").iterdir())
+          assert files, "dist is empty"
+          for f in files:
+              if f.suffix == ".whl":
+                  with zipfile.ZipFile(f) as z:
+                      assert any(p.startswith("odi/") for p in z.namelist())
+              elif f.suffixes[-2:] == [".tar", ".gz"]:
+                  with tarfile.open(f, "r:gz") as t:
+                      assert any(p.name == "pyproject.toml" for p in t.getmembers())
+          print("Distribution artifacts validated.")
+          PY
+      - name: Upload release candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: design-intelligence-release-candidate
+          path: dist/
+
+  recover:
+    name: 06 · Recover & Report
+    if: ${{ always() }}
+    needs: [intake, context, plan, execute, validate]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Classify pipeline result
+        shell: bash
+        run: |
+          set -euo pipefail
+          results='intake=${{ needs.intake.result }} context=${{ needs.context.result }} plan=${{ needs.plan.result }} execute=${{ needs.execute.result }} validate=${{ needs.validate.result }}'
+          echo "$results"
+          if echo "$results" | grep -Eq '(failure|cancelled)'; then
+            echo 'Recovery required: classify the failed gate and retry, replan, refine, or escalate.'
+            exit 1
+          fi
+          echo 'No recovery action required.'
+
+  release:
+    name: 07 · Release Candidate
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    needs: [validate, recover]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm release gate
+        run: echo 'Validated main-branch candidate is eligible for downstream release/provenance workflows.'
+
+  observe:
+    name: 08 · Observe & Learn
+    if: ${{ always() }}
+    needs: [validate, release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Emit pipeline telemetry
+        shell: bash
+        run: |
+          echo "workflow=${{ github.workflow }}"
+          echo "event=${{ github.event_name }}"
+          echo "ref=${{ github.ref }}"
+          echo "sha=${{ github.sha }}"
+          echo "validation=${{ needs.validate.result }}"
+          echo "release=${{ needs.release.result }}"
+          echo 'Learning loop: retain failures, corrections, validation outcomes, and release evidence for future workflow refinement.'
