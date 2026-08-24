@@ -8,10 +8,11 @@ from odi.control import (
     RecoveryPolicy,
     WorkflowState,
 )
+from odi.control.state import ExecutionIdentity
 from odi.core.contracts import CapabilityContract, ExecutionContext, RiskClass
+from odi.evaluation.evaluator import Candidate, EvaluationDataset, Evaluator
 from odi.registry.agents import AgentDefinition, AgentRegistry
 from odi.registry.capabilities import CapabilityRegistry
-from odi.evaluation.evaluator import Candidate, EvaluationDataset, Evaluator
 
 
 def _context() -> ExecutionContext:
@@ -19,25 +20,34 @@ def _context() -> ExecutionContext:
 
 
 def test_policy_requires_approval_for_high_risk() -> None:
-    policy = PolicyEngine(allowed_permissions={"design.write"}, approval_matrix=ApprovalMatrix())
-    contract = CapabilityContract("logo", "Logo", "1.0", {}, {}, RiskClass.HIGH, ("design.write",))
+    policy = PolicyEngine(
+        allowed_permissions={"design.write"}, approval_matrix=ApprovalMatrix()
+    )
+    contract = CapabilityContract(
+        "logo", "Logo", "1.0", {}, {}, RiskClass.HIGH, ("design.write",)
+    )
     assert policy.evaluate(_context(), contract).decision is PolicyDecision.REQUIRE_APPROVAL
     assert policy.authorize(_context(), contract, approved=True).decision is PolicyDecision.ALLOW
 
 
 def test_router_selects_single_capable_agent() -> None:
     capabilities = CapabilityRegistry()
-    contract = CapabilityContract("logo", "Logo", "1.0", {}, {}, permissions=("design.read",))
+    contract = CapabilityContract(
+        "logo", "Logo", "1.0", {}, {}, permissions=("design.read",)
+    )
     capabilities.register(contract)
     agents = AgentRegistry()
-    agents.register("logo-agent", AgentDefinition("logo-agent", "Logo Agent", "designer", ("logo",)))
+    agents.register(
+        "logo-agent",
+        AgentDefinition("logo-agent", "Logo Agent", "designer", ("logo",)),
+    )
     router = CapabilityRouter(capabilities, agents, PolicyEngine({"design.read"}))
     decision = router.route("logo", _context())
     assert decision.agent.id == "logo-agent"
 
 
 def test_checkpoint_is_immutable_history() -> None:
-    state = WorkflowState(identity=__import__("odi.control.state", fromlist=["ExecutionIdentity"]).ExecutionIdentity("exec-1"), objective="x")
+    state = WorkflowState(identity=ExecutionIdentity("exec-1"), objective="x")
     store = CheckpointStore()
     first = store.save(state)
     state.outputs.append({"x": 1})
@@ -48,7 +58,7 @@ def test_checkpoint_is_immutable_history() -> None:
 
 
 def test_recovery_is_bounded_and_classified() -> None:
-    state = WorkflowState(identity=__import__("odi.control.state", fromlist=["ExecutionIdentity"]).ExecutionIdentity("exec-1"), objective="x")
+    state = WorkflowState(identity=ExecutionIdentity("exec-1"), objective="x")
     policy = RecoveryPolicy(max_retries=1)
     first = policy.apply(state, FailureClass.TRANSIENT)
     second = policy.apply(state, FailureClass.TRANSIENT)
