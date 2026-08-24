@@ -6,6 +6,36 @@ Obsidian Design Intelligence (ODI) is the design-intelligence layer of the Niceo
 
 > **Core principle:** design intelligence proposes; governance authorizes; execution produces; validation verifies; evidence determines what becomes trusted.
 
+## Canonical Runtime Stack
+
+```text
+Core Contracts
+      ↓
+Capability Registry
+      ↓
+Agent Registry
+      ↓
+Model Registry / Gateway
+      ↓
+Knowledge + Evidence Fabric
+      ↓
+Context Engine
+      ↓
+Planner / Supervisor
+      ↓
+Orchestrator
+      ↓
+Execution Runtime
+      ↓
+Validation Engine
+      ↓
+Evidence / Observability
+      ↓
+Design Capability Fabric
+```
+
+This stack is implemented as replaceable structural boundaries. The kernel defines contracts and orchestration; providers, models, tools, and design generators plug into those boundaries.
+
 ## System Loop
 
 ```text
@@ -90,7 +120,24 @@ CONTROLLED EVOLUTION
 ```text
 obsidian-design-intelligence/
 ├── docs/                 # architecture, contracts, governance, research
-├── src/                  # executable ODI packages
+├── src/odi/
+│   ├── core/             # stable contracts and domain types
+│   ├── registry/         # capability, agent and model registries
+│   ├── model_gateway/    # provider-neutral model gateway
+│   ├── knowledge/        # knowledge + evidence fabric
+│   ├── context/          # context assembly
+│   ├── planning/         # planners
+│   ├── supervision/      # policy checkpoints
+│   ├── orchestration/    # plan coordination
+│   ├── execution/        # execution runtime
+│   ├── validation/       # quality gates
+│   ├── evidence/         # provenance ledger
+│   ├── observability/    # telemetry
+│   ├── design/           # design capability fabric
+│   ├── memory/           # memory boundary
+│   ├── evaluation/       # evaluation boundary
+│   ├── evolution/        # governed evolution
+│   └── interfaces/       # API/CLI boundary
 ├── knowledge/            # curated design intelligence and evidence
 ├── schemas/              # machine-readable contracts
 ├── skills/               # governed design/visual skill definitions
@@ -113,8 +160,8 @@ The architecture is informed by patterns observed in production AI and design sy
 
 ## Status
 
-**Phase:** Architecture foundation  
-**Evidence level:** Designed / repository scaffolded  
+**Phase:** Architecture foundation implemented  
+**Evidence level:** Structural scaffold implemented  
 **Production status:** Not production-verified
 
-Architecture claims must not be treated as implementation claims. Implementation, tests, integration, runtime, security, deployment, and rollback evidence are required before a capability is marked production verified.
+Architecture claims must not be treated as production claims. Implementation, tests, integration, runtime, security, deployment, and rollback evidence are required before a capability is marked production verified.
