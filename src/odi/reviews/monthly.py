@@ -177,7 +177,8 @@ class MonthlyReviewEngine:
                 raise MonthlyReviewError(f"weekly review is not completed: {review.id}")
             if review.week_start > review.week_end:
                 raise MonthlyReviewError(f"invalid week range: {review.id}")
-            if review.week_start.year != year or review.week_start.month != month:
+            # Weekly reviews are assigned to the month in which they close.
+            if review.week_end.year != year or review.week_end.month != month:
                 raise MonthlyReviewError(
                     f"weekly review {review.id} is outside the requested period"
                 )
