@@ -72,7 +72,7 @@ def test_incomplete_weekly_review_is_rejected() -> None:
         )
 
 
-def test_cross_month_weekly_review_is_rejected() -> None:
+def test_week_is_assigned_by_its_closing_month() -> None:
     review = WeeklyReview(
         id="week-cross-month",
         week_start=date(2026, 8, 31),
@@ -80,8 +80,8 @@ def test_cross_month_weekly_review_is_rejected() -> None:
         completed=True,
     )
 
-    with pytest.raises(MonthlyReviewError, match="outside"):
-        MonthlyReviewEngine().generate([review], year=2026, month=9)
+    result = MonthlyReviewEngine().generate([review], year=2026, month=9)
+    assert result.source_week_ids == ("week-cross-month",)
 
 
 def test_duplicate_weekly_reviews_are_rejected() -> None:
