@@ -15,10 +15,7 @@ from typing import Iterable, Mapping
 from uuid import uuid4
 
 
-_COMPLETED = "completed"
 _POSITIVE = {"completed", "done", "achieved", "success"}
-_PARTIAL = {"partial", "partially_completed", "at_risk"}
-_NEGATIVE = {"missed", "failed", "blocked", "deferred"}
 
 
 @dataclass(frozen=True)
@@ -131,7 +128,9 @@ class MonthlyReviewEngine:
         opportunities = self._recurring(reviews, "opportunities")
 
         adjustments = self._build_adjustments(reviews, blockers, risks, opportunities)
-        priorities = self._build_priorities(adjustments, opportunities, metric_summary)
+        priorities = self._build_priorities(
+            adjustments, opportunities, metric_summary, self.max_priorities
+        )
         summary = self._summary(
             period,
             len(reviews),
@@ -211,7 +210,7 @@ class MonthlyReviewEngine:
         occurrences: Counter[str] = Counter()
         display: dict[str, str] = {}
         for review in reviews:
-            # Count once per week: a repeated note in one review is still one signal.
+            # Count once per week: repeated notes in one review are still one signal.
             seen_this_week: set[str] = set()
             for raw in getattr(review, field_name):
                 key = cls._normalize(raw)
@@ -286,9 +285,10 @@ class MonthlyReviewEngine:
         adjustments: list[StrategicAdjustment],
         opportunities: tuple[tuple[str, int], ...],
         metric_summary: Mapping[str, float],
+        max_priorities: int,
     ) -> list[NextMonthPriority]:
         priorities: list[NextMonthPriority] = []
-        for adjustment in adjustments:
+        for adjustment in adjustments[:max_priorities]:
             metric = next(iter(metric_summary), "the agreed operating metric")
             priorities.append(
                 NextMonthPriority(
@@ -296,19 +296,23 @@ class MonthlyReviewEngine:
                     title=adjustment.title,
                     objective=adjustment.action,
                     rationale=adjustment.rationale,
-                    success_metric=f"Improve {metric} or demonstrate measurable impact by month-end.",
+                    success_metric=(
+                        f"Improve {metric} or demonstrate measurable impact by month-end."
+                    ),
                     priority=len(priorities) + 1,
                     source_adjustment_ids=(adjustment.id,),
                 )
             )
-        if not priorities and opportunities:
+        if not priorities and opportunities and max_priorities:
             item, _ = opportunities[0]
             priorities.append(
                 NextMonthPriority(
                     id=f"priority-{uuid4().hex}",
                     title=f"Validate opportunity: {item}",
                     objective=f"Run a measurable experiment around '{item}'.",
-                    rationale="No recurring corrective signal was strong enough to create a priority.",
+                    rationale=(
+                        "No recurring corrective signal was strong enough to create a priority."
+                    ),
                     success_metric="Experiment has a predefined pass/fail outcome.",
                     priority=1,
                 )
@@ -323,7 +327,10 @@ class MonthlyReviewEngine:
         return tuple(
             review.id
             for review in reviews
-            if any(MonthlyReviewEngine._normalize(value) == target for value in getattr(review, field_name))
+            if any(
+                MonthlyReviewEngine._normalize(value) == target
+                for value in getattr(review, field_name)
+            )
         )
 
     @staticmethod
