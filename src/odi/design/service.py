@@ -1,8 +1,11 @@
 """Design capability fabric service."""
+
 from dataclasses import dataclass
 from typing import Any
-from odi.design.blueprints import FAMILIES, SUBCAPABILITIES, WORKFLOWS, ADAPTERS, validate_catalog
+
 from odi.design.adapters import AdapterRegistry, AdapterRequest, AdapterResponse
+from odi.design.blueprints import FAMILIES, SUBCAPABILITIES, WORKFLOWS, validate_catalog
+
 
 @dataclass(frozen=True)
 class CapabilityPlan:
@@ -14,8 +17,10 @@ class CapabilityPlan:
     evidence: tuple[str, ...]
     adapters: tuple[str, ...]
 
+
 class DesignCapabilityService:
     """Resolves a design request into an executable, governable capability plan."""
+
     def __init__(self, adapters: AdapterRegistry | None = None) -> None:
         self.adapters = adapters or AdapterRegistry()
 
@@ -27,13 +32,25 @@ class DesignCapabilityService:
             raise ValueError(f"{sub_capability_id} is not part of {family_id}")
         if workflow_id not in sub.workflows:
             raise ValueError(f"{workflow_id} is not part of {sub_capability_id}")
-        return CapabilityPlan(family.id, sub.id, wf.id, sub.skills, sub.validators, sub.evidence, sub.adapters)
+        return CapabilityPlan(
+            family.id, sub.id, wf.id, sub.skills, sub.validators, sub.evidence, sub.adapters
+        )
 
-    def execute(self, plan: CapabilityPlan, inputs: dict[str, Any], constraints: dict[str, Any] | None = None) -> dict[str, Any]:
+    def execute(
+        self,
+        plan: CapabilityPlan,
+        inputs: dict[str, Any],
+        constraints: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         results: list[AdapterResponse] = []
         for adapter_id in plan.adapters:
             adapter = self.adapters.resolve(adapter_id)
-            request = AdapterRequest(plan.sub_capability, plan.workflow, inputs, constraints or ())
+            request = AdapterRequest(
+                plan.sub_capability,
+                plan.workflow,
+                inputs,
+                constraints or {},
+            )
             if hasattr(adapter, "generate"):
                 response = adapter.generate(request)
             elif hasattr(adapter, "render"):

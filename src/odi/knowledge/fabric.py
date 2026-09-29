@@ -1,5 +1,6 @@
 from odi.core.types import Evidence, KnowledgeItem
 
+
 class KnowledgeFabric:
     def __init__(self) -> None:
         self._items: dict[str, KnowledgeItem] = {}
@@ -19,4 +20,6 @@ class KnowledgeFabric:
 
     def search(self, topic: str) -> tuple[KnowledgeItem, ...]:
         q = topic.lower()
-        return tuple(i for i in self._items.values() if q in i.topic.lower() or q in str(i.content).lower())
+        return tuple(
+            i for i in self._items.values() if q in i.topic.lower() or q in str(i.content).lower()
+        )

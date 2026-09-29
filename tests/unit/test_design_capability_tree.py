@@ -1,4 +1,5 @@
 """Contract tests for the complete capability tree."""
+
 from odi.design.blueprints import FAMILIES, SUBCAPABILITIES, WORKFLOWS, validate_catalog
 
 

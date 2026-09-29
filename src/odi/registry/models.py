@@ -1,5 +1,7 @@
 from dataclasses import dataclass
+
 from odi.registry.base import Registry
+
 
 @dataclass(frozen=True)
 class ModelDefinition:
@@ -10,6 +12,7 @@ class ModelDefinition:
     capabilities: tuple[str, ...] = ()
     context_window: int | None = None
     metadata: dict[str, object] | None = None
+
 
 class ModelRegistry(Registry[ModelDefinition]):
     def compatible(self, capability_id: str) -> tuple[ModelDefinition, ...]:

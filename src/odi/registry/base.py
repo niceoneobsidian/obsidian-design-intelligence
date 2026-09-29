@@ -1,7 +1,9 @@
 """Generic deterministic registry primitive."""
+
 from typing import Generic, TypeVar
 
 T = TypeVar("T")
+
 
 class Registry(Generic[T]):
     def __init__(self) -> None:

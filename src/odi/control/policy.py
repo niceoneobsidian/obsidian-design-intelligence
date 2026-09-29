@@ -1,10 +1,13 @@
 from dataclasses import dataclass
+
 from odi.core.contracts import RiskClass
+
 
 @dataclass(frozen=True)
 class PolicyDecision:
     allowed: bool
     reason: str
+
 
 class PolicyEngine:
     def authorize(self, risk: RiskClass, approved: bool = True) -> PolicyDecision:

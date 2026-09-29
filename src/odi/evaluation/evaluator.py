@@ -1,5 +1,7 @@
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Any
+from typing import Any
+
 
 @dataclass(frozen=True)
 class Evaluation:
@@ -7,6 +9,7 @@ class Evaluation:
     passed: bool
     score: float
     findings: tuple[str, ...] = ()
+
 
 class Evaluator:
     def __init__(self, checks: tuple[Callable[[Any], bool], ...] = ()):

@@ -1,11 +1,14 @@
 from dataclasses import dataclass
+
 from odi.core.types import Evidence
+
 
 @dataclass(frozen=True)
 class EvidenceRecord:
     evidence: Evidence
     execution_id: str | None = None
     decision_id: str | None = None
+
 
 class EvidenceLedger:
     def __init__(self) -> None:

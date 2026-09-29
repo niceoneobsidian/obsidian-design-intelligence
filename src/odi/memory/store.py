@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+
 @dataclass
 class MemoryRecord:
     id: str
@@ -8,8 +9,10 @@ class MemoryRecord:
     content: Any
     metadata: dict[str, Any] = field(default_factory=dict)
 
+
 class MemoryStore:
     """Explicit memory boundary; memory is state, not curated knowledge."""
+
     def __init__(self) -> None:
         self._records: dict[str, MemoryRecord] = {}
 

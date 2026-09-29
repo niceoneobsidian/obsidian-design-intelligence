@@ -5,9 +5,23 @@ from odi.design.catalog import DESIGN_CAPABILITIES, get_capability, list_capabil
 
 def test_all_requested_capability_families_are_registered() -> None:
     expected = {
-        "brand_identity", "logo", "typography", "color", "ui_ux", "design_systems",
-        "image_generation", "image_editing", "video", "motion", "packaging", "print",
-        "signage", "presentations", "social_content", "production_preflight", "visual_qa",
+        "brand_identity",
+        "logo",
+        "typography",
+        "color",
+        "ui_ux",
+        "design_systems",
+        "image_generation",
+        "image_editing",
+        "video",
+        "motion",
+        "packaging",
+        "print",
+        "signage",
+        "presentations",
+        "social_content",
+        "production_preflight",
+        "visual_qa",
     }
     assert {c.family for c in DESIGN_CAPABILITIES} == expected
 

@@ -1,7 +1,10 @@
 """Canonical cross-layer types used by ODI."""
+
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Any, Mapping
+from typing import Any
 from uuid import uuid4
+
 
 @dataclass(frozen=True)
 class Intent:
@@ -9,6 +12,7 @@ class Intent:
     constraints: Mapping[str, Any] = field(default_factory=dict)
     preferences: Mapping[str, Any] = field(default_factory=dict)
     id: str = field(default_factory=lambda: f"intent-{uuid4().hex}")
+
 
 @dataclass(frozen=True)
 class Evidence:
@@ -19,6 +23,7 @@ class Evidence:
     confidence: float = 1.0
     provenance: Mapping[str, Any] = field(default_factory=dict)
 
+
 @dataclass(frozen=True)
 class KnowledgeItem:
     id: str
@@ -26,6 +31,7 @@ class KnowledgeItem:
     content: Any
     source_ids: tuple[str, ...] = ()
     metadata: Mapping[str, Any] = field(default_factory=dict)
+
 
 @dataclass(frozen=True)
 class PlanStep:
@@ -35,11 +41,13 @@ class PlanStep:
     dependencies: tuple[str, ...] = ()
     inputs: Mapping[str, Any] = field(default_factory=dict)
 
+
 @dataclass(frozen=True)
 class Plan:
     id: str
     steps: tuple[PlanStep, ...]
     rationale: str = ""
+
 
 @dataclass(frozen=True)
 class ValidationResult:
@@ -47,6 +55,7 @@ class ValidationResult:
     score: float
     checks: Mapping[str, bool] = field(default_factory=dict)
     findings: tuple[str, ...] = ()
+
 
 @dataclass(frozen=True)
 class ExecutionResult:

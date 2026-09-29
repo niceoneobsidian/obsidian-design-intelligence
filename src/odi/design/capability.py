@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+
 @dataclass(frozen=True)
 class DesignCapability:
     id: str
@@ -11,11 +12,14 @@ class DesignCapability:
     requirements: tuple[str, ...] = ()
     metadata: dict[str, Any] = field(default_factory=dict)
 
+
 class DesignProvider(Protocol):
     def execute(self, capability: DesignCapability, inputs: dict[str, Any]) -> Any: ...
 
+
 class DesignCapabilityFabric:
     """Domain-facing capability catalog; providers remain pluggable."""
+
     def __init__(self) -> None:
         self._capabilities: dict[str, DesignCapability] = {}
 

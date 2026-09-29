@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Any
-from odi.core.types import Intent, KnowledgeItem, Evidence
+
+from odi.core.types import Evidence, Intent, KnowledgeItem
+
 
 @dataclass(frozen=True)
 class AssembledContext:
@@ -9,6 +11,17 @@ class AssembledContext:
     evidence: tuple[Evidence, ...]
     data: dict[str, Any]
 
+
 class ContextEngine:
-    def assemble(self, intent: Intent, knowledge: tuple[KnowledgeItem, ...] = (), evidence: tuple[Evidence, ...] = ()) -> AssembledContext:
-        return AssembledContext(intent=intent, knowledge=knowledge, evidence=evidence, data={"objective": intent.objective, **dict(intent.constraints)})
+    def assemble(
+        self,
+        intent: Intent,
+        knowledge: tuple[KnowledgeItem, ...] = (),
+        evidence: tuple[Evidence, ...] = (),
+    ) -> AssembledContext:
+        return AssembledContext(
+            intent=intent,
+            knowledge=knowledge,
+            evidence=evidence,
+            data={"objective": intent.objective, **dict(intent.constraints)},
+        )
