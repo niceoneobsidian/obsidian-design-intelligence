@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "system": "obsidian-design-intelligence",
+  "substrate": {
+    "name": "niceone-obsidian",
+    "role": "governed_execution_substrate",
+    "ownership": [
+      "contracts",
+      "registries",
+      "policy",
+      "planning",
+      "orchestration",
+      "execution",
+      "recovery",
+      "evidence",
+      "validation",
+      "observability",
+      "evolution"
+    ]
+  },
+  "specialization": {
+    "name": "odi",
+    "ownership": [
+      "design_capabilities",
+      "design_agents",
+      "design_knowledge",
+      "design_workflows",
+      "design_evaluation",
+      "design_production"
+    ]
+  },
+  "integration_ports": [
+    "policy",
+    "execution",
+    "evidence",
+    "validation"
+  ],
+  "rules": {
+    "duplicate_kernel": false,
+    "bypass_policy": false,
+    "provider_specific_contracts": false,
+    "generated_output_is_trusted": false,
+    "evolution_requires_promotion": true,
+    "consequential_actions_require_trace": true
+  }
+}
